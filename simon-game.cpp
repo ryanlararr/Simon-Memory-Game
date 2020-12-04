@@ -27,6 +27,7 @@ int main()
     //Define a form.
     form fm;
     fm.caption("Simon - Ryan Arreola");
+    API::window_icon(fm.handle(), paint::image("favicon.ico"));
 
     //Defining buttons
     button redBtn{ fm }; redBtn.bgcolor(color(255, 0, 0));
