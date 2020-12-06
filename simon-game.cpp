@@ -4,82 +4,189 @@ using namespace std;
 using namespace nana;
 
 int main() {
+    //Randomizing rand
+    srand((unsigned int)time(NULL));
 
     //Definining audio files
     nana::audio::player playerDo("Do_Piano.wav");
     nana::audio::player playerRe("Re_Piano.wav");
     nana::audio::player playerMi("Mi_Piano.wav");
     nana::audio::player playerFa("Fa_Piano.wav");
+    nana::audio::player playerWrong("Wrong.wav");
 
-    int i = 0;
-    int colorCode;
-    timer seqDisplayTimer(chrono::milliseconds(2000));
+    //Define timer for user input
+    //User input must match the sequence vector
+    timer inputTimer(chrono::milliseconds(5000));
+    inputTimer.elapse([&] {
+        //If gotten to this point then the user has failed to input in the appropriate time frame.
+        cout << "Failed to input within 5 seconds";
+        playerTurn = false;
+        playerWrong.play();
+        inputTimer.stop();
+        });
+
+    int displayIdx = 0;
+    int inputIdx = 0;
+
+    timer seqDisplayTimer(chrono::milliseconds(500));
     seqDisplayTimer.elapse([&] {
-        sequence.push_back(rand() % 4);
-        if (i < sequence.size()) {
-            colorCode = sequence.at(i);
-
-            if (i > 0 && sequence.at(i-1.0) != sequence.at(i)) { lightOff(*buttons.at(sequence.at(i - 1.0)), sequence.at(i-1.0)); }
-
-            if (i < sequence.size()) {
-                lightOn(*buttons.at(sequence.at(i)), sequence.at(i));
-                playSound(colorCode);
-                cout << "Playing ";
-                switch (colorCode) {
-                case BLUE:
-                    cout << "blue\n";
-                    break;
-                case RED:
-                    cout << "red\n";
-                    break;
-                case YELLOW:
-                    cout << "yellow\n";
-                    break;
-                case GREEN:
-                    cout << "green\n";
-                    break;
-                default:
-                    break;
-                }
-            }
-            else {
-                seqDisplayTimer.stop();
-                cout << "End sequence" << endl;
-            }
+        if (displayIdx > 0) {
+            lightOff(*buttons.at(sequence.at(displayIdx - 1.0)), sequence.at(displayIdx - 1.0));
         }
-        i++;
+        if (displayIdx < sequence.size()) {
+            lightOn(*buttons.at(sequence.at(displayIdx)), sequence.at(displayIdx));
+            playSound(sequence.at(displayIdx));
+            switch (sequence.at(displayIdx)) {
+            case BLUE:
+                cout << "blue, ";
+                break;
+            case RED:
+                cout << "red, ";
+                break;
+            case YELLOW:
+                cout << "yellow, ";
+                break;
+            case GREEN:
+                cout << "green, ";
+                break;
+            default:
+                break;
+            }
+            displayIdx++;
+        }
+        else {
+            cout << "End sequence" << endl;
+            seqDisplayTimer.stop();
+            playerTurn = true;
+            //Starts timer for user input
+            inputTimer.start();
+        }
         });
 
     //Defining the base form
     const rectangle& rect = API::make_center(300, 200);
     //Removing the sizable property of the form
-    form mainFm(rect, appearance(1, 1, 1, 1, 1, 1, 0));
+    form mainFm(rect, appearance(1, 0, 1, 1, 1, 1, 0));
     mainFm.caption("Simon - Ryan Arreola");
     API::window_icon(mainFm.handle(), paint::image("favicon.ico"));
 
+
+    //Buttons will check whether it is at the end of the sequence and if the input itself matched the sequence.
+    //If the button press did not match the sequence then the error sound plays
+
+    
     //Defining buttons
     button redBtn{ mainFm }; redBtn.bgcolor(color(255, 0, 0));
     redBtn.events().click([&] {
         if (playerTurn) {
-            playerMi.play();
+            inputTimer.stop();
+            inputTimer.start();
+            if (sequence.at(inputIdx) == RED) {
+                playerMi.play();
+                if (inputIdx == sequence.size()-1) {
+                    cout << "Input sequence successfully\n";
+                    inputIdx = 0;
+                    displayIdx = 0;
+                    inputTimer.stop();
+                    sequence.push_back(rand() % 4);
+                    seqDisplayTimer.start();
+                }
+                else {
+                    inputTimer.start();
+                    inputIdx++;
+                }   
+            }
+            else {
+                cout << "Incorrect Press";
+                inputTimer.stop();
+                playerWrong.play();
+            }
         }
         });
     button greenBtn{ mainFm }; greenBtn.bgcolor(color(0, 100, 0));
     greenBtn.events().click([&] {
         if (playerTurn) {
-            playerRe.play();
+            inputTimer.stop();
+            inputTimer.start();
+            if (sequence.at(inputIdx) == GREEN) {
+                cout << "Correct Press";
+                playerRe.play();
+                if (inputIdx == sequence.size()-1) {
+                    cout << "Input sequence successfully\n";
+                    inputIdx = 0;
+                    displayIdx = 0;
+                    inputTimer.stop();
+                    sequence.push_back(rand() % 4);
+                    seqDisplayTimer.start();
+                }
+                else {
+                    inputTimer.start();
+                    inputIdx++;
+                }
+            }
+            else {
+                cout << "Incorrect Press";
+                inputTimer.stop();
+                playerWrong.play();
+            }
         }
         });
     button blueBtn{ mainFm }; blueBtn.bgcolor(color(0, 0, 255));
-    blueBtn.events().click([&] {
+    blueBtn.events().click([&] {        
         if (playerTurn) {
-            playerDo.play();
+            inputTimer.stop();
+            inputTimer.start();
+            if (sequence.at(inputIdx) == BLUE) {
+                cout << "Correct Press\n";
+                playerDo.play();
+                if (inputIdx == sequence.size()-1) {
+                    cout << "Input sequence successfully\n";
+                    inputIdx = 0;
+                    displayIdx = 0;
+                    inputTimer.stop();
+                    sequence.push_back(rand() % 4);
+                    seqDisplayTimer.start();
+                }
+                else {
+                    inputTimer.start();
+                    inputIdx++;
+                }    
+            }
+            else {
+                cout << "Incorrect Press";
+                inputTimer.stop();
+                playerWrong.play();
+            }
         }
         });
     button yellowBtn{ mainFm }; yellowBtn.bgcolor(color(200, 200, 0));
     yellowBtn.events().click([&] {
         if (playerTurn) {
-            playerFa.play();
+            inputTimer.stop();
+            inputTimer.start();
+            if (sequence.at(inputIdx) == YELLOW) {
+                cout << "Correct Press\n";
+                playerFa.play();
+                if (inputIdx == sequence.size()-1) {
+                    cout << "Input sequence successfully\n";
+                    //Reset the indexes
+                    inputIdx = 0;
+                    displayIdx = 0;
+                    //Stop the timer since it's done
+                    inputTimer.stop();
+                    sequence.push_back(rand() % 4);
+                    seqDisplayTimer.start();
+                }
+                else {
+                    inputTimer.start();
+                    inputIdx++;
+                }
+            }
+            else {
+                cout << "Incorrect Press";
+                inputTimer.stop();
+                playerWrong.play();
+            }
         }
         });
 
@@ -132,6 +239,7 @@ int main() {
     startBtn.events().click([&] {
         startFm.hide();
         labelFm.show();
+        sequence.push_back(rand() % 4);
         seqDisplayTimer.start();
         });
 
@@ -141,21 +249,8 @@ int main() {
 
     exec();
 }
-
-/*
-* Sets the current streak on the game label.
-*/
-void setStreak(int streak, label& lab) {
-    lab.caption(
-        labelHeader.append(
-            streak1d).append(
-                to_string(streak)).append(
-                    simonText)
-    );
-}
-
-void playSound(int colorId) {
-    switch (colorId) {
+void playSound(int colorCode) {
+    switch (colorCode) {
     case BLUE:
         playerDo.play();
         break;
@@ -174,9 +269,8 @@ void playSound(int colorId) {
     }
 }
 
-
-void lightOn(button& btn, int colorId) {
-    switch (colorId) {
+void lightOn(button& btn, int colorCode) {
+    switch (colorCode) {
     case BLUE:
         btn.bgcolor(color(128, 128, 255));
         break;
@@ -195,8 +289,8 @@ void lightOn(button& btn, int colorId) {
     }
 }
 
-void lightOff(button& btn, int colorId) {
-    switch (colorId) {
+void lightOff(button& btn, int colorCode) {
+    switch (colorCode) {
     case BLUE:
         btn.bgcolor(color(0, 0, 255));
         break;
