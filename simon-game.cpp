@@ -1,107 +1,217 @@
-﻿#ifndef NANA_ENABLE_AUDIO
-#define NANA_ENABLE_AUDIO
-#include <nana/push_ignore_diagnostic>
-#include <nana/deploy.hpp>
-#endif
-
-#include "simon-game.h"
-
-#include <nana/traits.hpp>
-#include <nana/gui.hpp>
-#include <nana/gui/widgets/label.hpp>
-#include <nana/gui/widgets/button.hpp>
-#include <nana/audio/player.hpp>
-#include <nana/threads/pool.hpp>
+﻿#include "simon-game.h"
 
 using namespace std;
 using namespace nana;
 
-int main()
-{
+int main() {
+
     //Definining audio files
     nana::audio::player playerDo("Do_Piano.wav");
     nana::audio::player playerRe("Re_Piano.wav");
     nana::audio::player playerMi("Mi_Piano.wav");
     nana::audio::player playerFa("Fa_Piano.wav");
 
+    int i = 0;
+    int colorCode;
+    timer seqDisplayTimer(chrono::milliseconds(2000));
+    seqDisplayTimer.elapse([&] {
+        sequence.push_back(rand() % 4);
+        if (i < sequence.size()) {
+            colorCode = sequence.at(i);
+
+            if (i > 0 && sequence.at(i-1.0) != sequence.at(i)) { lightOff(*buttons.at(sequence.at(i - 1.0)), sequence.at(i-1.0)); }
+
+            if (i < sequence.size()) {
+                lightOn(*buttons.at(sequence.at(i)), sequence.at(i));
+                playSound(colorCode);
+                cout << "Playing ";
+                switch (colorCode) {
+                case BLUE:
+                    cout << "blue\n";
+                    break;
+                case RED:
+                    cout << "red\n";
+                    break;
+                case YELLOW:
+                    cout << "yellow\n";
+                    break;
+                case GREEN:
+                    cout << "green\n";
+                    break;
+                default:
+                    break;
+                }
+            }
+            else {
+                seqDisplayTimer.stop();
+                cout << "End sequence" << endl;
+            }
+        }
+        i++;
+        });
+
     //Defining the base form
     const rectangle& rect = API::make_center(300, 200);
     //Removing the sizable property of the form
-    form fm(rect, appearance(1, 1, 1, 1, 1, 1, 0));
-    fm.caption("Simon - Ryan Arreola");
-    API::window_icon(fm.handle(), paint::image("favicon.ico"));
+    form mainFm(rect, appearance(1, 1, 1, 1, 1, 1, 0));
+    mainFm.caption("Simon - Ryan Arreola");
+    API::window_icon(mainFm.handle(), paint::image("favicon.ico"));
 
     //Defining buttons
-    button redBtn{ fm }; redBtn.bgcolor(color(255, 0, 0));
-    redBtn.events().click([&fm, &playerMi, &redBtn] {
-        playerMi.play();
+    button redBtn{ mainFm }; redBtn.bgcolor(color(255, 0, 0));
+    redBtn.events().click([&] {
+        if (playerTurn) {
+            playerMi.play();
+        }
         });
-    button greenBtn{ fm }; greenBtn.bgcolor(color(0, 255, 0));
-    fm["GREEN"] << greenBtn; greenBtn.hide();
-    greenBtn.events().click([&fm, &playerRe] {
-        playerRe.play();
+    button greenBtn{ mainFm }; greenBtn.bgcolor(color(0, 100, 0));
+    greenBtn.events().click([&] {
+        if (playerTurn) {
+            playerRe.play();
+        }
         });
-    button blueBtn{ fm }; blueBtn.bgcolor(color(0, 0, 255));
-    blueBtn.events().click([&fm, &playerDo] {
-        playerDo.play();
+    button blueBtn{ mainFm }; blueBtn.bgcolor(color(0, 0, 255));
+    blueBtn.events().click([&] {
+        if (playerTurn) {
+            playerDo.play();
+        }
         });
-    button yellowBtn{ fm }; yellowBtn.bgcolor(color(200, 255, 0));
-    yellowBtn.events().click([&fm, &playerFa] {
-        playerFa.play();
+    button yellowBtn{ mainFm }; yellowBtn.bgcolor(color(200, 200, 0));
+    yellowBtn.events().click([&] {
+        if (playerTurn) {
+            playerFa.play();
+        }
         });
+
+    //Adding button addresses to the button vector
+    buttons.insert(buttons.end(), {
+        &blueBtn,
+        &yellowBtn,
+        &redBtn,
+        &greenBtn });
 
     //Layout management
     string row1 = "< <BLUE><YELLOW> >";
     string row2 = "< <RED><GREEN> >";
-    fm.div("vert " + row1.append(row2));
+    mainFm.div("vert " + row1.append(row2));
 
     //Assigning buttons
-    fm["BLUE"] << blueBtn; blueBtn.hide();
-    fm["RED"] << redBtn; redBtn.hide();
-    fm["YELLOW"] << yellowBtn; yellowBtn.hide();
+    mainFm["BLUE"] << blueBtn;
+    mainFm["RED"] << redBtn;
+    mainFm["YELLOW"] << yellowBtn;
+    mainFm["GREEN"] << greenBtn;
 
-    fm.bgcolor(color(0, 0, 0));
-    fm.collocate();
+    mainFm.bgcolor(color(0, 0, 0));
+    mainFm.collocate();
 
     //Show the form
-    fm.show();
+    mainFm.show();
 
     //Form for the start button
-    nested_form fm2(fm, rectangle(75, 50, 150, 100), appearance(0, 0, 0, 1, 0, 1, 0));
-    fm2.bgcolor(color(255, 255, 255));
-    fm2.fgcolor(color(0, 0, 0));
+    nested_form startFm(mainFm, rectangle(75, 50, 150, 100), appearance(0, 0, 0, 1, 0, 1, 0));
+    startFm.bgcolor(color(255, 255, 255));
+    startFm.fgcolor(color(0, 0, 0));
     //Start button
-    button test{ fm2, "Start Game",true }; test.bgcolor(color(0, 0, 0, 100));
-    test.fgcolor(color(255, 255, 255));
-    fm2.div("vert <start>");
-    fm2["start"] << test;
+    button startBtn{ startFm, "Start Game",true }; startBtn.bgcolor(color(0, 0, 0, 100));
+    startBtn.fgcolor(color(255, 255, 255));
+    startFm.div("vert <start>");
+    startFm["start"] << startBtn;
 
     //Form for the ingame tracking
-    nested_form fm3(fm, rectangle(75, 50, 150, 100), appearance(0, 0, 0, 1, 0, 1, 0));
-    fm3.bgcolor(color(25, 25, 25));
-    fm3.fgcolor(color(0, 0, 0));
-    //Test label
-    label lab{ fm3 };
-    string currentStreak = "<size=12 bold white>\n-    Current Level    -</>";
-    string streak = "<size=20 bold white center>\n\t\t..0</>";
-    string simonText = "<size=8 bold white>\n\t\-  Simon Game CST8132  -</>";
-    lab.caption(currentStreak.append(streak).append(simonText));
+    nested_form labelFm(mainFm, rectangle(75, 50, 150, 100), appearance(0, 0, 0, 1, 0, 1, 0));
+    labelFm.bgcolor(color(25, 25, 25));
+    labelFm.fgcolor(color(0, 0, 0));
+
+    //Game label
+    label lab{ labelFm };
     lab.format(true);
 
-    fm3.div("vert <begin>");
-    fm3["begin"] << lab;
+    labelFm.div("vert <begin>");
+    labelFm["begin"] << lab;
 
-    test.events().click([&fm3, &fm2, &test] {
-        fm2.hide();
-        fm3.show();
+    startBtn.events().click([&] {
+        startFm.hide();
+        labelFm.show();
+        seqDisplayTimer.start();
         });
 
-    fm3.collocate();
-    fm2.collocate();
-    fm2.show();
+    labelFm.collocate();
+    startFm.collocate();
+    startFm.show();
 
     exec();
 }
 
+/*
+* Sets the current streak on the game label.
+*/
+void setStreak(int streak, label& lab) {
+    lab.caption(
+        labelHeader.append(
+            streak1d).append(
+                to_string(streak)).append(
+                    simonText)
+    );
+}
 
+void playSound(int colorId) {
+    switch (colorId) {
+    case BLUE:
+        playerDo.play();
+        break;
+    case YELLOW:
+        playerFa.play();
+        break;
+    case RED:
+        playerMi.play();
+        break;
+    case GREEN:
+        playerRe.play();
+        break;
+    default:
+        cout << "Error. Exiting.";
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+void lightOn(button& btn, int colorId) {
+    switch (colorId) {
+    case BLUE:
+        btn.bgcolor(color(128, 128, 255));
+        break;
+    case YELLOW:
+        btn.bgcolor(color(255, 255, 128));
+        break;
+    case RED:
+        btn.bgcolor(color(255, 128, 128));
+        break;
+    case GREEN:
+        btn.bgcolor(color(128, 255, 128));
+        break;
+    default:
+        cout << "Error. Exiting.";
+        exit(EXIT_FAILURE);
+    }
+}
+
+void lightOff(button& btn, int colorId) {
+    switch (colorId) {
+    case BLUE:
+        btn.bgcolor(color(0, 0, 255));
+        break;
+    case YELLOW:
+        btn.bgcolor(color(200, 200, 0));
+        break;
+    case RED:
+        btn.bgcolor(color(255, 0, 0));
+        break;
+    case GREEN:
+        btn.bgcolor(color(0, 100, 0));
+        break;
+    default:
+        cout << "Error. Exiting.";
+        exit(EXIT_FAILURE);
+    }
+}
 
