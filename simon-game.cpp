@@ -124,7 +124,7 @@ int main() {
         inputTimer.stop();
 
         //Set the caption to display the value of the round
-        lab.caption("<white>Sorry, Wrong Color.\nYou made it to round " + to_string(sequence.size() - 1) + ".</>");
+        lab.caption("<white>Sorry, you took over 5 seconds.\nYou made it to round " + to_string(sequence.size() - 1) + ".</>");
         //Display the hidden widgets in the form
         labelFm.get_place().field_display("begin", true);
         labelFm.get_place().field_display("PLAY", true);
