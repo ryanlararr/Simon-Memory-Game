@@ -1,26 +1,22 @@
 ﻿#include "simon-game.h"
 
-using namespace std;
-using namespace nana;
-
 int main() {
-
-    //Definining audio files
     nana::audio::player playerDo("Do_Piano.wav");
     nana::audio::player playerRe("Re_Piano.wav");
     nana::audio::player playerMi("Mi_Piano.wav");
     nana::audio::player playerFa("Fa_Piano.wav");
     nana::audio::player playerWrong("Wrong.wav");
+    nana::threads::pool pool(1);
 
     //Define timer for user input
     timer inputTimer(chrono::milliseconds(5000));
-    
+
     //Declaring indexes to reference location in the sequence
     int displayIdx = 0;
     int inputIdx = 0;
 
     timer seqDisplayTimer(chrono::milliseconds(500));
-    
+
     //Defining the base form
     const rectangle& rect = API::make_center(300, 200);
     //Removing the sizable property of the form
@@ -28,7 +24,7 @@ int main() {
     mainFm.caption("Simon - Ryan Arreola");
     API::window_icon(mainFm.handle(), paint::image("favicon.ico"));
 
-    
+
     //Defining buttons
     button redBtn{ mainFm }; redBtn.bgcolor(color(255, 0, 0));
     button greenBtn{ mainFm }; greenBtn.bgcolor(color(0, 100, 0));
@@ -78,7 +74,7 @@ int main() {
     lab.format(true);
     button quitBtn{ labelFm, "Quit",true };
     button restartBtn{ labelFm, "Restart Game",true };
-    
+
     //Layout management of the forms
     labelFm.div("vert <begin>< <PLAY><QUIT> >");
     labelFm["begin"] << lab;
@@ -89,8 +85,8 @@ int main() {
     labelFm.get_place().field_display("PLAY", false);
     labelFm.get_place().field_display("QUIT", false);
     labelFm.get_place().field_display("begin", false);
-    
-   
+
+
     labelFm.collocate();
     startFm.collocate();
     startFm.show();
@@ -100,7 +96,7 @@ int main() {
     seqDisplayTimer.elapse([&] {
         //If display is at the first index of the sequence there is no previous light to turn off
         if (displayIdx > 0) {
-            lightOff(*buttons.at(sequence.at(displayIdx - 1.0)), sequence.at(displayIdx - 1.0));
+            lightOff(*buttons.at(sequence.at(displayIdx - 1)), sequence.at(displayIdx - 1));
         }
         //As long as the index is within the range of the sequence vector there is a color to be represented
         if (displayIdx < sequence.size()) {
@@ -312,6 +308,13 @@ int main() {
 }
 
 void playSound(int colorCode) {
+    nana::audio::player playerDo("Do_Piano.wav");
+    nana::audio::player playerRe("Re_Piano.wav");
+    nana::audio::player playerMi("Mi_Piano.wav");
+    nana::audio::player playerFa("Fa_Piano.wav");
+    nana::audio::player playerWrong("Wrong.wav");
+    nana::threads::pool pool(1);
+
     switch (colorCode) {
     case BLUE:
         playerDo.play();
