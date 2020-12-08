@@ -2,20 +2,14 @@
 
 int main() {
 
-    //Initializing & storing audio audioPlayers
-    audio::player playerDo("resources/Do_Piano.wav");
-    audio::player playerRe("resources/Re_Piano.wav");
-    audio::player playerMi("resources/Mi_Piano.wav");
-    audio::player playerFa("resources/Fa_Piano.wav");
-    audio::player playerWrong("resources/Wrong.wav");
-    nana::threads::pool pool(1);
-    audioPlayers.insert(audioPlayers.end(), { &playerDo, &playerRe, &playerMi, &playerFa, &playerWrong });
-
     //Defining the base form
     const rectangle& rect = API::make_center(300, 200);
     form mainFm(rect, appearance(1, 1, 1, 1, 1, 1, 0));
     mainFm.caption("Simon - Ryan Arreola");
     API::window_icon(mainFm.handle(), paint::image("resources/favicon.ico"));
+
+    //Storing the audio players for use in event handling
+    audioPlayers.insert(audioPlayers.end(), { &playerDo, &playerRe, &playerMi, &playerFa, &playerWrong });
 
     //Defining buttons
     button blueBtn{ mainFm }; blueBtn.bgcolor(color(0, 0, 255));

@@ -32,11 +32,12 @@ enum BtnColors { BLUE, YELLOW, RED, GREEN, WRONG }; /*Values corresponding to ea
 vector<int> sequence; /*Vector containing the sequence of color codes generated randomly*/
 
 //Audio player declarations
-audio::player* playerDo;
-audio::player* playerRe;
-audio::player* playerMi;
-audio::player* playerFa;
-audio::player* playerWrong;
+audio::player playerDo("resources/Do_Piano.wav");
+audio::player playerRe("resources/Re_Piano.wav");
+audio::player playerMi("resources/Mi_Piano.wav");
+audio::player playerFa("resources/Fa_Piano.wav");
+audio::player playerWrong("resources/Wrong.wav");
+nana::threads::pool pool(1);
 
 //Define timer for user input
 timer inputTimer(chrono::milliseconds(5000)); /*Timer for user input. Set for 5 seconds.*/
